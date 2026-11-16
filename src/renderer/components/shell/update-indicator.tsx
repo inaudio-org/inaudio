@@ -49,40 +49,37 @@ export function UpdateIndicator() {
         : `Inaudio ${availableVersion ?? ''} is available`;
 
   return (
-    <>
-      <Tooltip content={label} side="bottom">
-        <button
-          type="button"
-          aria-label={label}
-          onClick={() => openSettings('updates')}
-          className={cn(
-            'flex h-7 items-center gap-1.5 rounded-full pr-2.5 text-xs font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-            state === 'downloading' && 'bg-accent-soft pl-1.5 text-accent',
-            state === 'downloaded' && 'update-pulse bg-accent pl-2 text-on-accent',
-            state === 'available' && 'bg-sunken pl-2.5 text-ink hover:bg-line',
-          )}
-        >
-          {state === 'downloading' && (
-            <>
-              <ProgressRing progress={progress} />
-              <span className="tabular-nums">{Math.round(progress)}%</span>
-            </>
-          )}
-          {state === 'downloaded' && (
-            <>
-              <RotateCw aria-hidden className="size-3.5" strokeWidth={2.5} />
-              Update ready
-            </>
-          )}
-          {state === 'available' && (
-            <>
-              <span aria-hidden className="size-[7px] rounded-full bg-accent" />
-              Update {availableVersion}
-            </>
-          )}
-        </button>
-      </Tooltip>
-      <span aria-hidden className="mx-1 h-[18px] w-px bg-line" />
-    </>
+    <Tooltip content={label} side="bottom">
+      <button
+        type="button"
+        aria-label={label}
+        onClick={() => openSettings('updates')}
+        className={cn(
+          'flex h-7 items-center gap-1.5 rounded-full pr-2.5 text-xs font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+          state === 'downloading' && 'bg-accent-soft pl-1.5 text-accent',
+          state === 'downloaded' && 'update-pulse bg-accent pl-2 text-on-accent',
+          state === 'available' && 'bg-sunken pl-2.5 text-ink hover:bg-line',
+        )}
+      >
+        {state === 'downloading' && (
+          <>
+            <ProgressRing progress={progress} />
+            <span className="tabular-nums">{Math.round(progress)}%</span>
+          </>
+        )}
+        {state === 'downloaded' && (
+          <>
+            <RotateCw aria-hidden className="size-3.5" strokeWidth={2.5} />
+            Update ready
+          </>
+        )}
+        {state === 'available' && (
+          <>
+            <span aria-hidden className="size-[7px] rounded-full bg-accent" />
+            Update {availableVersion}
+          </>
+        )}
+      </button>
+    </Tooltip>
   );
 }

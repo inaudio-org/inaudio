@@ -20,7 +20,7 @@ const none = z.undefined();
 
 const EXPORT_NAME: Record<ExportFormat, string> = { txt: 'Plain text', md: 'Markdown', json: 'JSON' };
 
-export function registerIpc(services: Services, requestQuit: () => Promise<void>): void {
+export function registerIpc(services: Services, requestQuit: (options?: { relaunch?: boolean }) => Promise<void>): void {
   const { settings, history, models, stt, tts: synthesis, inserter, paths, companion } = services;
 
   handle(IPC.systemStatus, none, () => services.status());
@@ -55,6 +55,12 @@ export function registerIpc(services: Services, requestQuit: () => Promise<void>
     }
     if (command === 'file.run-setup') {
       settings.update({ onboardingComplete: false });
+      return;
+    }
+    if (command === 'file.restart') {
+      // A development build runs off the Vite dev server, which stops with the process.
+      if (!app.isPackaged) throw new Error('In development, restart from the terminal: type rs and press Enter.');
+      void requestQuit({ relaunch: true }).catch((error: unknown) => console.error('Could not restart Inaudio', error));
       return;
     }
     if (command === 'file.quit') {
@@ -389,4 +395,7 @@ export function registerIpc(services: Services, requestQuit: () => Promise<void>
     companion.hover(hovering);
   });
   handleOn('companion', IPC.companionClick, none, () => companion.click());
+  listen('companion', IPC.companionDrag, schemas.companionDrag, ({ phase, x, y }) => {
+    companion.dragTo(phase, x, y);
+  });
 }

@@ -43,6 +43,20 @@ export interface OverlaySupport {
   hover: boolean;
   /** The cursor position can be read, so "follow the pointer" placement works. */
   cursor: boolean;
+  /** The app can place and move its own windows, so the pill and the companion can be dragged. */
+  place: boolean;
+}
+
+/** How the app reaches the display on Linux. */
+export interface LinuxDisplay {
+  /** The desktop session type. */
+  session: 'wayland' | 'x11';
+  /** Running through XWayland inside a Wayland session. */
+  xwayland: boolean;
+  /** XWayland is running, so the app can be started on it. */
+  xwaylandAvailable: boolean;
+  /** XDG_CURRENT_DESKTOP's first entry, such as COSMIC or GNOME; may be empty. */
+  desktop: string;
 }
 
 /** Whether each bundled speech-cleanup model passed its hash check. */
@@ -65,6 +79,8 @@ export interface SystemStatus {
   insertion: InsertionSupport;
   shortcuts: ShortcutState;
   overlay: OverlaySupport;
+  /** Linux only: the display server this process uses. */
+  linuxDisplay: LinuxDisplay | null;
   trayVisible: boolean;
   notificationsSupported: boolean;
   dataDir: string;
@@ -120,6 +136,8 @@ export interface OverlayState extends DictationState {
   language: string;
   /** True while the window accepts mouse events, so controls are usable. */
   interactive: boolean;
+  /** The app can move its windows here, so the pill shows its drag handle (not on native Wayland). */
+  movable: boolean;
   /**
    * True once the pointer or an open menu has armed the pill. The window was widened for
    * the controls, so the renderer shows them exactly when it has been given the room.
@@ -271,6 +289,7 @@ export type WindowAction = 'minimize' | 'maximize-toggle' | 'close';
 export type AppMenuCommand =
   | 'file.open-models-folder'
   | 'file.run-setup'
+  | 'file.restart'
   | 'file.quit'
   | 'view.dictation'
   | 'view.live'

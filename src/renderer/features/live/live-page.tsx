@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import { needsDisplayCapture, type LiveSource } from '@shared/domain/capture';
 import { wordCount } from '@shared/domain/history';
 import { MODEL_CATALOG } from '@shared/domain/models';
-import { ActivityStats, CopyButton, LevelWave, RecentItem } from '@renderer/components/ui/activity';
+import { CopyButton, LevelWave, RecentItem } from '@renderer/components/ui/activity';
+import { ActivityButton, ActivityDrawer } from '@renderer/components/ui/activity-drawer';
 import { Button } from '@renderer/components/ui/button';
 import { EmptyState } from '@renderer/components/ui/empty-state';
+import { IconButton } from '@renderer/components/ui/icon-button';
 import { Badge, Kbd, Notice, PageHeader, SectionHeading } from '@renderer/components/ui/layout';
 import { Segmented } from '@renderer/components/ui/segmented';
 import { Spinner } from '@renderer/components/ui/spinner';
@@ -69,6 +71,7 @@ export function LivePage() {
   const navigate = useUi((s) => s.navigate);
   const [asking, setAsking] = useState(false);
   const [sessions, setSessions] = useState(false);
+  const [activity, setActivity] = useState(false);
   const popOut = useAction(() => api.live.openWindow());
   const elapsed = useElapsed(live.phase === 'capturing' ? live.startedAt : 0);
   const { data: history } = useHistory({ kind: 'live', limit: RECENT, offset: 0 });
@@ -135,12 +138,13 @@ export function LivePage() {
         description="Transcribe audio playing on this computer, like a meeting or a video. Audio is processed here and never saved."
         actions={
           <>
-            <Button size="sm" onClick={() => setSessions(true)}>
-              <History /> Saved sessions
-            </Button>
-            <Button size="sm" loading={popOut.pending} onClick={() => void popOut.run()}>
-              <PictureInPicture2 /> Pop out
-            </Button>
+            <IconButton label="Saved sessions" side="bottom" aria-haspopup="dialog" aria-expanded={sessions} onClick={() => setSessions(true)}>
+              <History />
+            </IconButton>
+            {settings.live.saveHistory && <ActivityButton open={activity} onClick={() => setActivity(true)} />}
+            <IconButton label="Pop out" side="bottom" loading={popOut.pending} onClick={() => void popOut.run()}>
+              <PictureInPicture2 />
+            </IconButton>
           </>
         }
       />
@@ -305,8 +309,6 @@ export function LivePage() {
 
       {settings.live.saveHistory && (
         <>
-          <ActivityStats kind="live" />
-
           <section className="grid gap-1">
             {recent.length ? (
               groupByDay(recent).map((group, index) => (
@@ -350,6 +352,7 @@ export function LivePage() {
 
       <ConsentDialog open={asking || consent !== null} onCancel={onCancelConsent} onConfirm={onConfirm} />
       <SavedSessionsDrawer open={sessions} onOpenChange={setSessions} />
+      {settings.live.saveHistory && <ActivityDrawer kind="live" open={activity} onOpenChange={setActivity} />}
     </div>
   );
 }

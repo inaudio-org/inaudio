@@ -6,10 +6,12 @@
 - Script tests: `node --test scripts/*.test.mjs`
 - On Windows, run npm from Git Bash: PowerShell blocks `npm.ps1` (execution policy).
 - `npm start` exits immediately if the installed Inaudio app is running (single-instance lock, shared `%APPDATA%\Inaudio`).
+- `npm start` runs `scripts/start.mjs` (wraps `electron-forge start`, passes extra args through). Inside a Flatpak (e.g. Flathub VS Code) it adds `--no-sandbox` for that dev run, since Flatpak blocks the user namespaces and setuid that Chromium's sandbox needs. Outside Flatpak, a `chrome-sandbox` SUID error is fixed with `sudo chown root:root node_modules/electron/dist/chrome-sandbox && sudo chmod 4755 node_modules/electron/dist/chrome-sandbox`.
 
 ## Companion
 - Companions are built-in Blobatars (`@blobatar/react`, `animate="always"`). The roster lives in `src/shared/domain/companion.ts` (`COMPANIONS`); each entry pins `traits.shape` to a shape band. There is no external package/spritesheet loader — do not reintroduce one.
 - State → face mapping is `companionExpression()` in `src/renderer/features/companion/companion-avatar.tsx`; idle mood drift is in `src/renderer/companion.tsx`.
+- The companion is dragged by a press that moves past 4 px (`useCompanionDrag` in `companion.tsx`, `companion:drag` → `CompanionService.dragTo()`); a press that stays put is still a click. The drop is saved as work-area fractions of the window centre (`companion.customX/Y`); picking a position or Reset clears them, and `focus-area` tracking stops while they are set.
 - Eye tracking: main (`companion-gaze.ts` + `focus-probe.ts`, Windows `GetGUIThreadInfo`/UIA via `powershell-helper.ts`) sends window-client targets over `EVENTS.companionGaze`; the renderer feeds them to `useGaze` from `@blobatar/react/gaze`. `useGaze({ travel })` is required — `--mo-track-travel` defaults to 0.
 - Main only tracks eyes while the companion is visible, awake, `eyesFollow` on, and `motion === 'full'`; field probing also runs for `position === 'focus-area'` placement.
 
@@ -29,15 +31,21 @@
 - These pages are cardless with 6px corners: sections end in a hairline (`border-b`/`border-t border-line`), text sits in 6px `bg-sunken` wells, and only round controls (record, play) are round. Chart bars and heatmap cells use 2px.
 - Section headings use `SectionHeading` (`components/ui/layout.tsx`). Empty lists, ranges and drawers use `EmptyState` (`size="sm"` inside a section), never a bare line of text.
 - Async clicks use `useAction` (`lib/use-action.ts`) and `Button`/`IconButton` `loading`; copy buttons use `CopyButton` from `components/ui/activity.tsx`. Spinners are `Spinner` (`components/ui/spinner.tsx`), which holds still under reduced or off motion; do not use `animate-spin`.
-- Activity stats are counted in main: `history:stats` (`handleOn('main')`, `{ kind: 'dictation' | 'live', days: 7 | 30 }`) runs `activityOf()` from `src/shared/history/stats.ts` over `HistoryRepository.activity()` and returns numbers only. The renderer never pulls transcripts to count them; pages fetch only the recent rows they show. The query key lives under `['history']`, so history invalidation refreshes it.
+- Activity stats are counted in main: `history:stats` (`handleOn('main')`, `{ kind: 'dictation' | 'live', days: 7 | 30 }`) runs `activityOf()` from `src/shared/history/stats.ts` over `HistoryRepository.activity()` and returns numbers only, including a per-model split (`models`: words, audio, time on device, per-day words and audio). The renderer never pulls transcripts to count them; pages fetch only the recent rows they show. The query key lives under `['history']`, so history invalidation refreshes it.
+- Page-header actions on Dictation and Live are icon buttons with tooltips (`IconButton`), not labelled buttons: mode and microphone (Dictation), saved sessions and pop out (Live), and Activity. Activity is not on the pages: that icon opens `ActivityDrawer` (`components/ui/activity-drawer.tsx`), which only queries while open. Dictation draws words per day as a stacked area by model, Live draws minutes per day as stacked columns. Series colours are `--chart-1..4` by catalog order, so a model keeps its colour; no gradients. Streaks fill the drawer's width: `ACTIVITY_WEEKS` (26) square, fluid columns with month and weekday labels.
 - `src/shared/history/stats.ts` has no value imports so `node --test` can load it; `domain/history.ts` re-exports its `wordCount`.
 - Read Aloud's player is a "now playing" bar: title and status left, Replay/previous/play/next/Stop with sentence segments and times in the middle, voice, a speed preset menu and volume right. Spoken-audio semantics: back and forward step by sentence, no shuffle or repeat. The exact speed slider lives in Settings (`settings-read-aloud-voice`).
 - `text:insert` and `clipboard:write` are `handleOn('main')`. The overlay, companion and live window never send text; give them a fixed action that main answers instead.
+
+## Linux display
+- Chromium picks Wayland or X11 before any app code runs; `app.commandLine.appendSwitch('ozone-platform', …)` is too late. On a Wayland session with XWayland running, a packaged build relaunches itself once with `--ozone-platform=x11` (`relaunchUnderXWayland()` in `main/app/platform.ts`, before the window opens) unless `system.linuxXWayland` is off; `npm start` passes the flag itself (`scripts/start.mjs`). Restart from Settings goes through `file.restart`, which recomputes the flag from the setting.
+- `isWayland()` means a native Wayland client: it is false under XWayland. On native Wayland the compositor places windows and `win.show()` focuses them, so `OverlaySupport.place` is false and the pill handle and companion dragging are hidden.
 
 ## Settings
 - Settings is a route with its own sidebar (`SettingsSidebar`, swapped in by `AppShell`): "Back to Inaudio" returns to `useUi().previousRoute`. Categories and the search index live in `features/settings/settings-nav.ts`; `openSettings(category, focusId)` opens a page and scrolls to a setting. Each section in `settings-page.tsx` renders only on its category.
 
 ## Onboarding
+- What's new lives in the title bar (`WhatsNewButton`), not the sidebar: "What's new in x.y.z" until that version's billboard is opened (`announcements.seenVersion`), then only the icon, which still opens it.
 - Setup is a non-dismissible `Billboard` (`components/ui/billboard.tsx`) over `<AppShell backdrop>`, which is inert and always shows the app sidebar without window controls; setup draws its own minimize and close. Every billboard hero (setup, what's new, release notes) is the plain `CloudShader` at `h-[168px]`, with no SVG illustrations on top; setup passes a fixed `heroKey` so the clouds stay in place while the steps change.
 
 ## Navigation

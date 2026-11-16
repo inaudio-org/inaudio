@@ -144,7 +144,7 @@ function LoadingLines() {
  * The what's-new billboard: once after an update, at a quiet moment, never over dictation or
  * a live transcript. What it lists comes from GitHub as it opens: what changed since the version
  * last seen. Closing it remembers the version; "Don't show after updates" turns it off, and the
- * setting brings it back. It can always be opened from the sidebar.
+ * setting brings it back. It can always be opened from the title bar (`WhatsNewButton`).
  */
 export function WhatsNewBillboard() {
   const open = useUi((s) => s.whatsNew);

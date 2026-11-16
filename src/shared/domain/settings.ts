@@ -282,6 +282,11 @@ export const settingsSchema = z.object({
     confirmQuitDuringCapture: z.boolean(),
     autoUnload: z.boolean(),
     idleMinutes: z.number().int().min(1).max(60),
+    /**
+     * Linux on a Wayland session: start through XWayland so the overlay, the companion and the
+     * live window can stay on top, sit where they are put and be dragged. Read at launch.
+     */
+    linuxXWayland: z.boolean(),
   }),
   updates: z.object({
     checkAutomatically: z.boolean(),
@@ -420,6 +425,7 @@ export const DEFAULT_SETTINGS: Settings = {
     confirmQuitDuringCapture: true,
     autoUnload: true,
     idleMinutes: 10,
+    linuxXWayland: true,
   },
   updates: { checkAutomatically: true, downloadAutomatically: true },
   companion: DEFAULT_COMPANION_SETTINGS,

@@ -56,6 +56,7 @@ export const IPC = {
   companionSelect: 'companion:select',
   companionVisibility: 'companion:visibility',
   companionHover: 'companion:hover',
+  companionDrag: 'companion:drag',
   companionClick: 'companion:click',
 } as const;
 

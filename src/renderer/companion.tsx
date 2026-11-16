@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useGaze } from '@blobatar/react/gaze';
 import { idle, surprised, type Expression } from 'blobatar/expression';
@@ -35,6 +35,64 @@ const SILENT_EVENTS: readonly CompanionEvent[] = [
   'model.loading',
   'model.loaded',
 ];
+
+/** A press that travels this far (in DIPs) is a drag, not a click. */
+const DRAG_THRESHOLD = 4;
+
+/**
+ * Dragging the companion: a press that moves past the threshold reports screen positions,
+ * and main moves the window and remembers where it was dropped. A press that stays put is
+ * still a click.
+ */
+function useCompanionDrag(movable: boolean) {
+  const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const frame = useRef(0);
+  const swallowClick = useRef(false);
+  const [dragging, setDragging] = useState(false);
+
+  const finish = (event: PointerEvent<HTMLElement>) => {
+    const current = press.current;
+    press.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    if (!current?.moved) return;
+    cancelAnimationFrame(frame.current);
+    api.companions.drag('end', event.screenX, event.screenY);
+    swallowClick.current = true;
+    setDragging(false);
+  };
+
+  return {
+    dragging,
+    /** True once, for the click that ends a drag. */
+    takeClick(): boolean {
+      const swallow = swallowClick.current;
+      swallowClick.current = false;
+      return !swallow;
+    },
+    handlers: {
+      onPointerDown(event: PointerEvent<HTMLElement>) {
+        if (!movable || event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        press.current = { x: event.screenX, y: event.screenY, moved: false };
+      },
+      onPointerMove(event: PointerEvent<HTMLElement>) {
+        const current = press.current;
+        if (!current) return;
+        const { screenX, screenY } = event;
+        if (!current.moved) {
+          if (Math.hypot(screenX - current.x, screenY - current.y) < DRAG_THRESHOLD) return;
+          current.moved = true;
+          setDragging(true);
+          api.companions.drag('start', current.x, current.y);
+        }
+        cancelAnimationFrame(frame.current);
+        frame.current = requestAnimationFrame(() => api.companions.drag('move', screenX, screenY));
+      },
+      onPointerUp: finish,
+      onPointerCancel: finish,
+    },
+  };
+}
 
 function Companion() {
   const [snapshot, setSnapshot] = useState<CompanionSnapshot | null>(null);
@@ -173,6 +231,7 @@ function Companion() {
     return () => clearTimeout(timer);
   }, [revision, isResume]);
 
+  const drag = useCompanionDrag(snapshot?.movable ?? false);
   if (!snapshot) return null;
   const { companion, settings, state } = snapshot;
   const bubble = companionBubbleText(state, settings.position === 'focus-area');
@@ -187,10 +246,16 @@ function Companion() {
     <button
       type="button"
       aria-label={`${companion.displayName}, ${state}`}
-      className={`companion-stage companion-stage-${state} group grid size-full place-items-center border-0 bg-transparent p-0 outline-none`}
+      title={snapshot.movable ? 'Drag to move' : undefined}
+      data-movable={snapshot.movable || undefined}
+      data-dragging={drag.dragging || undefined}
+      className={`companion-stage companion-stage-${state} group grid size-full touch-none place-items-center border-0 bg-transparent p-0 outline-none`}
       onMouseEnter={() => api.companions.hover(true)}
-      onMouseLeave={() => api.companions.hover(false)}
-      onClick={() => void api.companions.click().catch(() => undefined)}
+      onMouseLeave={() => !drag.dragging && api.companions.hover(false)}
+      {...drag.handlers}
+      onClick={() => {
+        if (drag.takeClick()) void api.companions.click().catch(() => undefined);
+      }}
     >
       {settings.showBubble && <span className="companion-bubble" role="status">{bubble}</span>}
       <span className="companion-face">

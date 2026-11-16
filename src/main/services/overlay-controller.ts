@@ -358,6 +358,7 @@ export class OverlayController {
       model: descriptor.name,
       language: descriptor.languages.length > 1 ? 'Auto' : '',
       interactive: this.interactive(),
+      movable: overlaySupport().place,
       armed: this.armed(),
       // `place()` pins this edge and grows the window on the free side, so the renderer
       // aligns the pill here and opens its panels into the room it was given.

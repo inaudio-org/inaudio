@@ -168,6 +168,8 @@ export interface InaudioApi {
     setVisibility(visible: boolean): Promise<CompanionSnapshot>;
     hover(hovering: boolean): void;
     click(): Promise<CompanionSnapshot>;
+    /** The companion is being dragged: pointer positions in screen coordinates. */
+    drag(phase: 'start' | 'move' | 'end', x: number, y: number): void;
   };
   events: {
     onCommand(listener: (command: AppCommand) => void): Unsubscribe;

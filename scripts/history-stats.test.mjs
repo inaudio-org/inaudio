@@ -89,3 +89,23 @@ test('a transcript dated in the future is ignored', () => {
   assert.equal(result.takes, 0);
   assert.equal(result.streak.longest, 0);
 });
+
+test('the range is split by model, most words first, with per-day words and audio', () => {
+  const take = (daysAgo, words, modelId, durationMs = 10_000, inferenceMs = 500) => ({ ...row(daysAgo, words, durationMs), modelId, inferenceMs });
+  const rows = [take(0, 5, 'parakeet-v3'), take(0, 3, 'nemotron', 20_000, 2_000), take(2, 9, 'parakeet-v3'), take(9, 50, 'parakeet-v2')];
+  const { models } = activityOf(rows, timesOf(rows), { now: NOW, days: 7 });
+  assert.deepEqual(
+    models.map((model) => model.id),
+    ['parakeet-v3', 'nemotron'],
+  );
+  const [v3, nemotron] = models;
+  assert.deepEqual({ words: v3.words, takes: v3.takes, ms: v3.ms, inferenceMs: v3.inferenceMs }, { words: 14, takes: 2, ms: 20_000, inferenceMs: 1_000 });
+  assert.deepEqual(v3.dailyWords, [0, 0, 0, 0, 9, 0, 5]);
+  assert.deepEqual(nemotron.dailyMs, [0, 0, 0, 0, 0, 0, 20_000]);
+});
+
+test('rows without a model are counted as unknown', () => {
+  const rows = [row(0, 4)];
+  const { models } = activityOf(rows, timesOf(rows), { now: NOW, days: 7 });
+  assert.deepEqual(models.map((model) => [model.id, model.words]), [['unknown', 4]]);
+});

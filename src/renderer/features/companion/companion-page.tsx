@@ -5,12 +5,13 @@ import {
   type CompanionSettings,
 } from '@shared/domain/companion';
 import type { SettingsPatch } from '@shared/domain/settings';
+import { Button } from '@renderer/components/ui/button';
 import { PageHeader, Row, Section } from '@renderer/components/ui/layout';
 import { Select } from '@renderer/components/ui/select';
 import { Slider } from '@renderer/components/ui/slider';
 import { Switch } from '@renderer/components/ui/switch';
 import { api } from '@renderer/lib/api';
-import { useSettings, useUpdateSettings } from '@renderer/lib/queries';
+import { useSettings, useSystemStatus, useUpdateSettings } from '@renderer/lib/queries';
 import { CompanionAvatar, companionExpression } from './companion-avatar';
 
 const STATES: readonly (readonly [CompanionEvent, string])[] = [
@@ -27,6 +28,7 @@ type DraftKey = 'scale' | 'edgeMargin' | 'soundVolume' | 'idleSleepMinutes' | 'h
 
 export function CompanionPage() {
   const { data: settings } = useSettings();
+  const { data: status } = useSystemStatus();
   const update = useUpdateSettings();
   const [drafts, setDrafts] = useState<Partial<Pick<CompanionSettings, DraftKey>>>({});
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,8 @@ export function CompanionPage() {
   }, [update.error]);
   if (!settings) return null;
   const companionSettings = settings.companion;
+  const dropped = companionSettings.customX !== null && companionSettings.customY !== null;
+  const movable = status?.overlay.place ?? true;
   const selected = COMPANIONS.find((item) => item.id === companionSettings.activeId) ?? COMPANIONS[0];
   if (!selected) return null;
 
@@ -169,20 +173,39 @@ export function CompanionPage() {
             ]}
           />
         </Row>
-        <Row label="Desktop position" description="The position is clamped to the active display work area.">
-          <Select
-            label="Desktop position"
-            value={companionSettings.position}
-            onValueChange={(position) => change({ position: position as CompanionSettings['position'] })}
-            options={[
-              { value: 'top-left', label: 'Top left' },
-              { value: 'top-right', label: 'Top right' },
-              { value: 'bottom-left', label: 'Bottom left' },
-              { value: 'bottom-right', label: 'Bottom right' },
-              { value: 'near-microphone', label: 'Near microphone' },
-              { value: 'focus-area', label: 'Above active area' },
-            ]}
-          />
+        <Row
+          label="Desktop position"
+          description={
+            dropped
+              ? 'Where you dropped it. Pick a position to put it back, or drag it again.'
+              : movable
+                ? 'Pick a position, or drag the companion on the desktop and it stays where you drop it.'
+                : 'This desktop session does not let apps move their windows, so the companion cannot be dragged.'
+          }
+        >
+          <span className="flex items-center gap-2">
+            {dropped && (
+              <Button size="sm" variant="ghost" onClick={() => change({ customX: null, customY: null })}>
+                Reset
+              </Button>
+            )}
+            <Select<CompanionSettings['position'] | 'dropped'>
+              label="Desktop position"
+              value={dropped ? 'dropped' : companionSettings.position}
+              onValueChange={(position) => {
+                if (position !== 'dropped') change({ position, customX: null, customY: null });
+              }}
+              options={[
+                ...(dropped ? [{ value: 'dropped' as const, label: 'Where I dropped it' }] : []),
+                { value: 'top-left', label: 'Top left' },
+                { value: 'top-right', label: 'Top right' },
+                { value: 'bottom-left', label: 'Bottom left' },
+                { value: 'bottom-right', label: 'Bottom right' },
+                { value: 'near-microphone', label: 'Near microphone' },
+                { value: 'focus-area', label: 'Above active area' },
+              ]}
+            />
+          </span>
         </Row>
         <Row label="Edge inset" description="Keep the buddy this far inside the display edges.">
           <div className="flex w-56 items-center gap-3">
