@@ -73,7 +73,7 @@ export function ReleaseNotesDrawer() {
       open={open}
       onOpenChange={setOpen}
       title="Release notes"
-      description="Live from GitHub Releases, shikki841/inaudio."
+      description="Live from GitHub Releases, inaudio-org/inaudio."
       className="w-[min(440px,calc(100vw-12px))] shadow-[-6px_0_20px_rgb(0_0_0/0.12)] dark:shadow-[-6px_0_20px_rgb(0_0_0/0.36)]"
       hero={<ReleaseNotesHero />}
       headerActions={

@@ -31,7 +31,7 @@ export const EXTERNAL_LINKS = {
   nemotron: 'https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b',
   kokoro: 'https://huggingface.co/hexgrad/Kokoro-82M',
   sherpaOnnx: 'https://github.com/k2-fsa/sherpa-onnx',
-  releases: 'https://github.com/shikki841/inaudio/releases',
+  releases: 'https://github.com/inaudio-org/inaudio/releases',
 } as const;
 export type ExternalLinkId = keyof typeof EXTERNAL_LINKS;
 

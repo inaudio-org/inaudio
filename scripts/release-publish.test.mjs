@@ -46,7 +46,7 @@ test('rejects a changed Flatpak before invoking GitHub release commands', () => 
       encoding: 'utf8',
       env: {
         ...process.env,
-        GITHUB_REPOSITORY: 'shikki841/inaudio',
+        GITHUB_REPOSITORY: 'inaudio-org/inaudio',
         GITHUB_SHA: 'a'.repeat(40),
         RELEASE_TAG: 'v1.2.3',
         GITHUB_CALL_LOG: calls,

@@ -6,7 +6,7 @@ directories:
   buildResources: assets/icons
 publish:
   provider: github
-  owner: shikki841
+  owner: inaudio-org
   repo: inaudio
   releaseType: release
 artifactName: Inaudio-${version}-${arch}.${ext}

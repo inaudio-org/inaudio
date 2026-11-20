@@ -2,7 +2,7 @@
 
 Security fixes target the latest release and `main`. Older versions may not receive backports.
 
-Please report vulnerabilities privately using [GitHub's vulnerability reporting form](https://github.com/shikki841/inaudio/security/advisories/new). If private reporting is unavailable, ask a maintainer to enable it through an issue containing no exploit details or sensitive data. Never post recordings, transcripts, credentials, or personal information in a public report.
+Please report vulnerabilities privately using [GitHub's vulnerability reporting form](https://github.com/inaudio-org/inaudio/security/advisories/new). If private reporting is unavailable, ask a maintainer to enable it through an issue containing no exploit details or sensitive data. Never post recordings, transcripts, credentials, or personal information in a public report.
 
 Include the affected version, OS, reproduction steps, impact, and a minimal proof of concept. Give maintainers time to investigate and coordinate a fix before publishing details. Response times depend on maintainer availability.
 

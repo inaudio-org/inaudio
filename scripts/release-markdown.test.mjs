@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compareVersions, highlight, highlights, parseReleaseMarkdown, whatsNewSince } from '../src/shared/update/release-markdown.ts';
 
-// The real body of shikki841/inaudio v1.9.1.
+// The real body of inaudio-org/inaudio v1.9.1.
 const GENERATED = `<!-- Release notes generated using configuration in .github/release.yml at v1.9.1 -->
 
 ## What's Changed
 ### Other changes
-* chore(release): prepare v1.9.1 by @BotCoder254 in https://github.com/shikki841/inaudio/pull/56
+* chore(release): prepare v1.9.1 by @BotCoder254 in https://github.com/inaudio-org/inaudio/pull/56
 
 
-**Full Changelog**: https://github.com/shikki841/inaudio/compare/v1.9.0...v1.9.1`;
+**Full Changelog**: https://github.com/inaudio-org/inaudio/compare/v1.9.0...v1.9.1`;
 
 test('generated release notes become headings, items and lines', () => {
   assert.deepEqual(parseReleaseMarkdown(GENERATED), [
