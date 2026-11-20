@@ -8,25 +8,25 @@
   Built with Electron, React, TypeScript, and sherpa-onnx.
 </p>
 <p align="center">
-  <a href="https://github.com/shikki841/inaudio/actions/workflows/ci.yml"><img src="https://github.com/shikki841/inaudio/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://github.com/inaudio-org/inaudio/actions/workflows/ci.yml"><img src="https://github.com/inaudio-org/inaudio/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license" /></a>
-  <a href="https://github.com/shikki841/inaudio/releases"><img src="https://img.shields.io/github/v/release/shikki841/inaudio" alt="Latest release" /></a>
+  <a href="https://github.com/inaudio-org/inaudio/releases"><img src="https://img.shields.io/github/v/release/inaudio-org/inaudio" alt="Latest release" /></a>
 </p>
 <p align="center">
-  <a href="https://github.com/shikki841/inaudio/releases">Downloads</a> ·
+  <a href="https://github.com/inaudio-org/inaudio/releases">Downloads</a> ·
   <a href="CONTRIBUTING.md">Contribute</a> ·
-  <a href="https://github.com/shikki841/inaudio/issues/new/choose">Report an issue</a>
+  <a href="https://github.com/inaudio-org/inaudio/issues/new/choose">Report an issue</a>
 </p>
 
 ## See it work
 
 <p align="center">
-  <a href="https://github.com/shikki841/inaudio/releases/download/v1.10.0/inaudio-demo.mp4">
+  <a href="https://github.com/inaudio-org/inaudio/releases/download/v1.10.0/inaudio-demo.mp4">
     <img src="docs/media/inaudio-demo.gif" width="880" alt="Inaudio demo: dictating into Notepad, a live transcript of system audio in the app and in the floating window, the audio settings, Read Aloud, and History with its text blurred" />
   </a>
 </p>
 <p align="center">
-  <a href="https://github.com/shikki841/inaudio/releases/download/v1.10.0/inaudio-demo.mp4">Watch the full recording with sound</a> (about 4 minutes, recorded on Windows from a real run; History text is blurred).
+  <a href="https://github.com/inaudio-org/inaudio/releases/download/v1.10.0/inaudio-demo.mp4">Watch the full recording with sound</a> (about 4 minutes, recorded on Windows from a real run; History text is blurred).
 </p>
 
 ## Speak. Edit. Keep going.
@@ -47,7 +47,7 @@ Speech-to-text includes NVIDIA Nemotron ASR Streaming, an English cache-aware st
 Use Node.js 24 LTS and npm. Native packaging prerequisites are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```sh
-git clone https://github.com/shikki841/inaudio.git
+git clone https://github.com/inaudio-org/inaudio.git
 cd inaudio
 npm ci
 npm start

@@ -1,11 +1,15 @@
+import { MonitorCog } from 'lucide-react';
 import type { Settings } from '@shared/domain/settings';
 import { OVERLAY_MIN_OPACITY } from '@shared/domain/settings';
-import type { SystemStatus } from '@shared/domain/system';
+import type { LinuxDisplay, SystemStatus } from '@shared/domain/system';
+import { Button } from '@renderer/components/ui/button';
 import { Notice, Row } from '@renderer/components/ui/layout';
 import { Segmented } from '@renderer/components/ui/segmented';
 import { Select } from '@renderer/components/ui/select';
 import { Slider } from '@renderer/components/ui/slider';
 import { Switch } from '@renderer/components/ui/switch';
+import { api } from '@renderer/lib/api';
+import { useAction } from '@renderer/lib/use-action';
 import { OverlayPlacement } from './overlay-placement';
 import { ShortcutInput } from './shortcut-input';
 
@@ -178,6 +182,58 @@ export function OverlaySettings({
           />
         </Row>
       )}
+    </>
+  );
+}
+
+/**
+ * Linux on a Wayland session only. A native Wayland client cannot place its windows, keep them
+ * on top or keep them from taking focus, so the floating windows start through XWayland unless
+ * this is turned off. The choice is made at launch, so a change asks for a restart.
+ */
+export function LinuxDisplaySettings({
+  display,
+  xwayland,
+  onChange,
+}: {
+  display: LinuxDisplay | null;
+  xwayland: boolean;
+  onChange(xwayland: boolean): void;
+}) {
+  const restart = useAction(() => api.system.menu('file.restart'));
+  if (!display || display.session !== 'wayland') return null;
+  const pending = display.xwaylandAvailable && xwayland !== display.xwayland;
+  const desktop = display.desktop ? `${display.desktop} on Wayland` : 'Wayland session';
+  return (
+    <>
+      <Row
+        id="settings-overlay-xwayland"
+        label="Use XWayland for floating windows"
+        description={
+          display.xwaylandAvailable
+            ? 'Wayland does not let apps place their own windows, so the overlay, the companion and the live window cannot stay on top or be dragged. XWayland lets them. Recommended.'
+            : 'XWayland is not running in this session, so Inaudio runs on Wayland directly.'
+        }
+      >
+        <Switch
+          aria-label="Use XWayland for floating windows"
+          checked={xwayland && display.xwaylandAvailable}
+          disabled={!display.xwaylandAvailable}
+          onCheckedChange={onChange}
+        />
+      </Row>
+      <div className="flex items-center gap-2.5 rounded-[6px] bg-sunken px-3 py-2.5 text-[13px] text-muted">
+        <MonitorCog aria-hidden className="size-4 shrink-0" />
+        <span className="min-w-0 flex-1">
+          {desktop} · {display.xwayland ? 'running through XWayland' : 'running on Wayland directly'}
+          {pending ? '. Restart Inaudio to apply the change.' : ''}
+        </span>
+        {pending && (
+          <Button size="sm" loading={restart.pending} onClick={() => void restart.run()}>
+            Restart to apply
+          </Button>
+        )}
+      </div>
     </>
   );
 }

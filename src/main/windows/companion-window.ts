@@ -51,6 +51,11 @@ export function createCompanionWindow(): BrowserWindow {
   return win;
 }
 
+/** True when the companion was dragged somewhere and sits there instead of at `position`. */
+export function companionIsCustom(companion: Pick<CompanionSettings, 'customX' | 'customY'>): boolean {
+  return companion.customX !== null && companion.customY !== null;
+}
+
 /** Tall focused fields (a whole document) are no place to perch above; the cursor is used instead. */
 const MAX_ANCHOR_FIELD_HEIGHT = 160;
 
@@ -68,20 +73,30 @@ export function placeCompanion(
   win: BrowserWindow,
   position: CompanionPosition,
   scale: number,
-  options: Pick<CompanionSettings, 'edgeMargin' | 'keepAwayFromText'> = {
+  options: Pick<CompanionSettings, 'edgeMargin' | 'keepAwayFromText'> & Partial<Pick<CompanionSettings, 'customX' | 'customY'>> = {
     edgeMargin: 56,
     keepAwayFromText: true,
   },
   /** Where the user is typing, when known. Only "Above active area" uses it. */
   focus?: FocusTarget | null,
 ): void {
+  const size = Math.round(128 * scale);
+  const windowWidth = Math.max(size + 48, COMPANION_SIZE);
+  const windowHeight = Math.max(size + 52, COMPANION_HEIGHT);
+  const current = win.getBounds();
+  if (options.customX != null && options.customY != null) {
+    // Dropped by hand: its centre, as shares of the screen it was left on.
+    const here = screen.getDisplayNearestPoint({ x: current.x + Math.round(current.width / 2), y: current.y + Math.round(current.height / 2) }).workArea;
+    const nextX = Math.round(Math.max(here.x, Math.min(here.x + options.customX * here.width - windowWidth / 2, here.x + here.width - windowWidth)));
+    const nextY = Math.round(Math.max(here.y, Math.min(here.y + options.customY * here.height - windowHeight / 2, here.y + here.height - windowHeight)));
+    if (current.x === nextX && current.y === nextY && current.width === windowWidth && current.height === windowHeight) return;
+    win.setBounds({ x: nextX, y: nextY, width: windowWidth, height: windowHeight }, false);
+    return;
+  }
   const focusArea = position === 'focus-area';
   const area = focusArea ? activeArea(focus) : null;
   const display = screen.getDisplayNearestPoint(area ? { x: area.x, y: area.top } : screen.getCursorScreenPoint());
   const { x, y, width, height } = display.workArea;
-  const size = Math.round(128 * scale);
-  const windowWidth = Math.max(size + 48, COMPANION_SIZE);
-  const windowHeight = Math.max(size + 52, COMPANION_HEIGHT);
   const margin = Math.min(options.edgeMargin, Math.floor(Math.min(width, height) / 3));
   const left = position.endsWith('left') ? x + margin : x + width - windowWidth - margin;
   const top = position.startsWith('top') ? y + margin : y + height - windowHeight - margin;
@@ -105,7 +120,6 @@ export function placeCompanion(
   const nextX = Math.max(x + margin, Math.min(unclampedX, x + width - windowWidth - margin));
   const nextY = Math.max(y + margin, Math.min(unclampedY, y + height - windowHeight - margin));
   // Focus tracking calls this four times a second; an unmoved window is left alone.
-  const current = win.getBounds();
   if (current.x === nextX && current.y === nextY && current.width === windowWidth && current.height === windowHeight) return;
   win.setBounds({ x: nextX, y: nextY, width: windowWidth, height: windowHeight }, false);
 }

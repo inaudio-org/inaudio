@@ -88,6 +88,7 @@ export const SEARCH_ITEMS: { id: string; label: string; category: SettingsCatego
   { id: 'settings-overlay-opacity', label: 'Overlay opacity', category: 'overlay', keywords: 'transparent fade solid' },
   { id: 'settings-overlay-click-through', label: 'Click through', category: 'overlay', keywords: 'mouse clicks idle ignore' },
   { id: 'settings-overlay-sections', label: 'Overlay contents', category: 'overlay', keywords: 'timer level model language meter elapsed caption' },
+  { id: 'settings-overlay-xwayland', label: 'Use XWayland for floating windows', category: 'overlay', keywords: 'linux wayland x11 xwayland cosmic gnome on top drag companion' },
   { id: 'settings-live-window-open', label: 'Show the live window when a session starts', category: 'live-window', keywords: 'floating live transcript captions pop out open automatically' },
   { id: 'settings-live-window-top', label: 'Keep the live window on top', category: 'live-window', keywords: 'always on top pin float' },
   { id: 'settings-live-window-capture', label: 'Hide the live window from screen sharing', category: 'live-window', keywords: 'privacy content protection screenshot meeting share' },

@@ -31,7 +31,7 @@ export const EXTERNAL_LINKS = {
   nemotron: 'https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b',
   kokoro: 'https://huggingface.co/hexgrad/Kokoro-82M',
   sherpaOnnx: 'https://github.com/k2-fsa/sherpa-onnx',
-  releases: 'https://github.com/shikki841/inaudio/releases',
+  releases: 'https://github.com/inaudio-org/inaudio/releases',
 } as const;
 export type ExternalLinkId = keyof typeof EXTERNAL_LINKS;
 
@@ -212,6 +212,7 @@ export const schemas = {
   menuCommand: z.enum([
     'file.open-models-folder',
     'file.run-setup',
+    'file.restart',
     'file.quit',
     'view.dictation',
     'view.live',
@@ -225,4 +226,12 @@ export const schemas = {
   companionId: z.enum(COMPANION_IDS),
   companionVisibility: z.boolean(),
   companionHover: z.boolean(),
+  // Pointer positions in screen DIPs while the companion is dragged.
+  companionDrag: z
+    .object({
+      phase: z.enum(['start', 'move', 'end']),
+      x: z.number().int().min(-100_000).max(100_000),
+      y: z.number().int().min(-100_000).max(100_000),
+    })
+    .strict(),
 };

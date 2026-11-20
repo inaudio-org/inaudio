@@ -73,7 +73,7 @@ export function ReleaseNotesDrawer() {
       open={open}
       onOpenChange={setOpen}
       title="Release notes"
-      description="Live from GitHub Releases, shikki841/inaudio."
+      description="Live from GitHub Releases, inaudio-org/inaudio."
       className="w-[min(440px,calc(100vw-12px))] shadow-[-6px_0_20px_rgb(0_0_0/0.12)] dark:shadow-[-6px_0_20px_rgb(0_0_0/0.36)]"
       hero={<ReleaseNotesHero />}
       headerActions={
@@ -144,7 +144,7 @@ function LoadingLines() {
  * The what's-new billboard: once after an update, at a quiet moment, never over dictation or
  * a live transcript. What it lists comes from GitHub as it opens: what changed since the version
  * last seen. Closing it remembers the version; "Don't show after updates" turns it off, and the
- * setting brings it back. It can always be opened from the sidebar.
+ * setting brings it back. It can always be opened from the title bar (`WhatsNewButton`).
  */
 export function WhatsNewBillboard() {
   const open = useUi((s) => s.whatsNew);

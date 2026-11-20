@@ -1,10 +1,11 @@
 import { app, BrowserWindow, dialog, Menu, nativeTheme, powerMonitor, systemPreferences } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import type { AppCommand } from '@shared/domain/system';
-import { DEFAULT_SETTINGS } from '@shared/domain/settings';
+import { coerceSettings, DEFAULT_SETTINGS } from '@shared/domain/settings';
 import { EVENTS } from '@shared/ipc/channels';
 import { appPaths } from './app/paths';
-import { LINUX_LOOPBACK_FEATURE } from './app/platform';
+import { LINUX_LOOPBACK_FEATURE, relaunchOptions, relaunchUnderXWayland } from './app/platform';
 import { registerIpc } from './ipc/register';
 import { handleAppScheme, registerAppScheme } from './security/app-protocol';
 import { applySessionPolicy } from './security/hardening';
@@ -19,8 +20,21 @@ app.setName('Inaudio');
 // Chromium 152 ships PulseAudio loopback for screen share disabled; live transcripts need it.
 // Feature switches are read once at startup, so this has to run before the app is ready.
 if (process.platform === 'linux') app.commandLine.appendSwitch('enable-features', LINUX_LOOPBACK_FEATURE);
+/** The XWayland setting, read straight from disk: it decides how this process starts. */
+function xwaylandWanted(): boolean {
+  try {
+    return coerceSettings(JSON.parse(fs.readFileSync(appPaths().settings, 'utf8')) as unknown).system.linuxXWayland;
+  } catch {
+    return DEFAULT_SETTINGS.system.linuxXWayland;
+  }
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
+} else if (relaunchUnderXWayland(xwaylandWanted)) {
+  // Hand the lock to the copy started on XWayland, which opens the windows instead.
+  app.releaseSingleInstanceLock();
+  app.exit(0);
 } else {
   registerAppScheme();
   app.enableSandbox();
@@ -37,7 +51,7 @@ function bootstrap(): void {
   let quitPromptOpen = false;
   let shutdownStarted = false;
 
-  const requestQuit = async (): Promise<void> => {
+  const requestQuit = async ({ relaunch = false }: { relaunch?: boolean } = {}): Promise<void> => {
     if (quitting || quitPromptOpen) return;
     const current = services?.settings.get();
     const dictationPhase = services?.dictation.current().phase;
@@ -66,6 +80,7 @@ function bootstrap(): void {
       }
     }
     quitting = true;
+    if (relaunch) app.relaunch(relaunchOptions(services?.settings.get().system.linuxXWayland ?? false));
     app.quit();
   };
 

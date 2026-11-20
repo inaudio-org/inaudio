@@ -12,7 +12,7 @@ import { useUi, type SettingsCategory } from '@renderer/stores/ui-store';
 import type { Settings } from '@shared/domain/settings';
 import type { ShortcutStatus } from '@shared/domain/system';
 import { LiveWindowSettings } from './live-window-settings';
-import { OverlaySettings } from './overlay-settings';
+import { LinuxDisplaySettings, OverlaySettings } from './overlay-settings';
 import { ReadAloudSettings } from './read-aloud-settings';
 import { CATEGORIES } from './settings-nav';
 import { ShortcutInput } from './shortcut-input';
@@ -226,6 +226,11 @@ export function SettingsPage() {
           platform={status.platform}
           shortcut={status.shortcuts.overlay}
           onChange={(patch) => update.mutate({ overlay: patch })}
+        />
+        <LinuxDisplaySettings
+          display={status.linuxDisplay}
+          xwayland={settings.system.linuxXWayland}
+          onChange={(linuxXWayland) => update.mutate({ system: { linuxXWayland } })}
         />
       </Section>
       )}

@@ -35,6 +35,12 @@
   --warning-soft: #fbf0dc;
   --danger: #c4322b;
   --danger-soft: #fbe6e5;
+  /* Activity chart series, one per recognition model. The first two follow the accent tone. */
+  --chart-1: var(--accent);
+  /* Toward the text colour: darker than the accent in light mode, lighter in dark. */
+  --chart-2: color-mix(in oklab, var(--accent) 52%, var(--ink));
+  --chart-3: #c97420;
+  --chart-4: var(--faint);
   color-scheme: light;
 }
 
@@ -60,6 +66,7 @@
     --warning-soft: #32260f;
     --danger: #ff6f64;
     --danger-soft: #3a1d1b;
+    --chart-3: #e7a35a;
     color-scheme: dark;
   }
 }
@@ -77,6 +84,7 @@
   --on-accent: #ffffff;
 }
 :root[data-accent-tone='amber'] {
+  --chart-3: #17827d;
   --accent: #ba7400;
   --accent-hover: #9f6600;
   --accent-soft: #f7edda;
@@ -103,6 +111,7 @@
     --on-accent: #081d12;
   }
   :root[data-accent-tone='amber'] {
+    --chart-3: #4cc3bd;
     --accent: #e7b45a;
     --accent-hover: #efc680;
     --accent-soft: #38280f;
@@ -226,6 +235,16 @@
   .companion-face {
     display: block;
     filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.18));
+  }
+  /* The companion can be picked up and dropped anywhere where the platform lets apps move windows. */
+  .companion-stage[data-movable] {
+    cursor: grab;
+  }
+  .companion-stage[data-dragging] {
+    cursor: grabbing;
+  }
+  .companion-stage[data-dragging] .companion-face {
+    filter: drop-shadow(0 16px 26px rgb(0 0 0 / 0.26));
   }
   .companion-stage-sleeping .companion-face {
     opacity: 0.58;

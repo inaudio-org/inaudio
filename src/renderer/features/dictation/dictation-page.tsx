@@ -1,9 +1,12 @@
-import { Mic, Square, X } from 'lucide-react';
+import { Hand, Mic, MicVocal, Square, ToggleRight, X } from 'lucide-react';
+import { useState } from 'react';
 import type { Transcript } from '@shared/domain/history';
 import { MODEL_CATALOG } from '@shared/domain/models';
-import { ActivityStats, CopyButton, LevelWave, RecentItem } from '@renderer/components/ui/activity';
+import { CopyButton, LevelWave, RecentItem } from '@renderer/components/ui/activity';
+import { ActivityButton, ActivityDrawer } from '@renderer/components/ui/activity-drawer';
 import { Button } from '@renderer/components/ui/button';
 import { EmptyState } from '@renderer/components/ui/empty-state';
+import { IconButton } from '@renderer/components/ui/icon-button';
 import { Badge, Kbd, Notice, PageHeader, SectionHeading } from '@renderer/components/ui/layout';
 import { Spinner } from '@renderer/components/ui/spinner';
 import { useMediaDevices } from '@renderer/features/audio/use-devices';
@@ -46,6 +49,8 @@ export function DictationPage() {
   const { data: settings } = useSettings();
   const { data: status } = useSystemStatus();
   const navigate = useUi((s) => s.navigate);
+  const openSettings = useUi((s) => s.openSettings);
+  const [activity, setActivity] = useState(false);
   const elapsed = useElapsed(startedAt);
   const microphones = useMediaDevices('audioinput');
   const saving = settings?.dictation.saveHistory !== false;
@@ -71,9 +76,18 @@ export function DictationPage() {
         title="Dictation"
         description="Speak into any app. Audio is transcribed on this computer and typed where your cursor is."
         actions={
-          <span className="flex flex-wrap justify-end gap-2">
-            <Badge>{settings.dictation.mode === 'push-to-talk' ? 'Push to talk' : 'Toggle'}</Badge>
-            {microphone && <Badge className="max-w-60 truncate">{microphone}</Badge>}
+          <span className="flex items-center gap-1">
+            <IconButton
+              label={`${settings.dictation.mode === 'push-to-talk' ? 'Push to talk' : 'Toggle'}. Change in Settings`}
+              side="bottom"
+              onClick={() => openSettings('dictation', 'settings-dictation')}
+            >
+              {settings.dictation.mode === 'push-to-talk' ? <Hand /> : <ToggleRight />}
+            </IconButton>
+            <IconButton label={`${microphone ?? 'Default microphone'}. Change in Audio`} side="bottom" onClick={() => navigate('audio')}>
+              <MicVocal />
+            </IconButton>
+            {saving && <ActivityButton open={activity} onClick={() => setActivity(true)} />}
           </span>
         }
       />
@@ -139,8 +153,6 @@ export function DictationPage() {
 
       {saving ? (
         <>
-          <ActivityStats kind="dictation" />
-
           <section className="grid gap-1">
             {recent.length ? (
               groupByDay(recent).map((group, index) => (
@@ -212,6 +224,7 @@ export function DictationPage() {
           <p className="m-0 text-xs text-faint">Save history is off, so only the last take is kept, and only until Inaudio closes.</p>
         </section>
       )}
+      {saving && <ActivityDrawer kind="dictation" open={activity} onOpenChange={setActivity} />}
     </div>
   );
 }

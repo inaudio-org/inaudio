@@ -12,7 +12,6 @@ import {
   Settings2Motion,
   SparklesMotion,
   Volume2Motion,
-  WandSparklesMotion,
   type MotionIcon,
   type MotionIconHandle,
 } from '@renderer/components/icons/motion-icons';
@@ -136,21 +135,18 @@ function NavButton({
 
 /**
  * The app's navigation: pages in groups, then what is always within reach at the bottom:
- * what's new, the engine's state, Settings and the collapse control.
+ * the engine's state, Settings and the collapse control. What's new lives in the title bar.
  */
 export function Sidebar({ macInset }: { macInset: boolean }) {
   const { route, navigate } = useUi();
-  const openWhatsNew = useUi((s) => s.setWhatsNew);
   const { data: settings } = useSettings();
   const { data: status } = useSystemStatus();
   const update = useUpdateSettings();
   const phase = useDictation((s) => s.phase);
   const liveCapturing = useLive((s) => s.live.phase === 'capturing');
   const reading = useReadAloud((s) => s.state.status === 'playing' || s.state.status === 'preparing');
-  const whatsNewIcon = useRef<MotionIconHandle>(null);
   const toggleIcon = useRef<MotionIconHandle>(null);
   const collapsed = settings?.appearance.sidebarCollapsed ?? false;
-  const unseen = !!status?.appVersion && settings?.announcements.seenVersion !== status.appVersion;
   const shortcut = settings && status ? formatAccelerator(settings.dictation.shortcut, status.platform).join(' ') : '';
 
   const toggle = () => update.mutate({ appearance: { sidebarCollapsed: !collapsed } });
@@ -205,33 +201,6 @@ export function Sidebar({ macInset }: { macInset: boolean }) {
       </NavigationMenu.Root>
 
       <div className="grid shrink-0 gap-1 px-3 pt-2">
-        {collapsed ? (
-          <span className="relative">
-            <NavButton label="What’s new" icon={WandSparklesMotion} collapsed onClick={() => openWhatsNew(true)} />
-            {unseen && <span aria-label="Not seen yet" className="pointer-events-none absolute top-1.5 right-2 size-2 rounded-full bg-accent" />}
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => openWhatsNew(true)}
-            onMouseEnter={() => whatsNewIcon.current?.start()}
-            className={cn(
-              'flex items-center gap-2.5 rounded-[10px] p-2 text-left outline-none transition-colors focus-visible:outline-2 focus-visible:outline-accent',
-              unseen ? 'border border-line bg-surface hover:border-line-strong' : 'hover:bg-surface/60',
-            )}
-          >
-            <span className={cn('grid size-7 shrink-0 place-items-center rounded-[8px]', unseen ? 'bg-accent-soft text-accent' : 'text-muted')}>
-              <WandSparklesMotion ref={whatsNewIcon} className="size-4" />
-            </span>
-            <span className="grid min-w-0 gap-px">
-              <span className={cn('truncate text-[13px]', unseen ? 'font-semibold text-ink' : 'text-muted')}>
-                What’s new{status?.appVersion ? ` in ${status.appVersion}` : ''}
-              </span>
-              {unseen && <span className="truncate text-xs text-muted">See what changed</span>}
-            </span>
-            {unseen && <span aria-label="Not seen yet" className="ml-auto size-[7px] shrink-0 rounded-full bg-accent" />}
-          </button>
-        )}
         <EngineStatus collapsed={collapsed} />
         <div className={cn('flex items-center gap-1 border-t border-line pt-1.5', collapsed && 'flex-col')}>
           <div className={cn(collapsed ? 'w-full' : 'flex-1')}>

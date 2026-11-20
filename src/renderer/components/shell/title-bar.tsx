@@ -5,6 +5,7 @@ import { IconButton } from '@renderer/components/ui/icon-button';
 import { api } from '@renderer/lib/api';
 import { useSystemStatus } from '@renderer/lib/queries';
 import { UpdateIndicator } from './update-indicator';
+import { WhatsNewButton } from './whats-new-button';
 
 const MENUS: {
   label: string;
@@ -87,7 +88,9 @@ export function TitleBar({ controls = true }: { controls?: boolean }) {
       </nav>
 
       <div className={controls ? 'no-drag flex items-center gap-1' : 'invisible'}>
+        <WhatsNewButton />
         <UpdateIndicator />
+        <span aria-hidden className="mx-1 h-[18px] w-px bg-line" />
         <button
           type="button"
           className="rounded-[6px] p-1 text-muted hover:bg-surface hover:text-ink"

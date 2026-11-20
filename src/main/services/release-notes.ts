@@ -4,7 +4,7 @@ import { parseReleaseMarkdown, type ReleaseNote } from '@shared/update/release-m
 import type { ReleaseNotesResult } from '@shared/domain/update';
 
 /** The same repository the update feed reads (assets/app-update.yml). */
-const REPOSITORY = 'shikki841/inaudio';
+const REPOSITORY = 'inaudio-org/inaudio';
 const RELEASES_URL = `https://api.github.com/repos/${REPOSITORY}/releases?per_page=10`;
 const RELEASE_PAGE = `https://github.com/${REPOSITORY}/releases/`;
 /**

@@ -311,7 +311,7 @@ export function Pill({ state }: { state: OverlayState }) {
         !armed && !busy && !failed && !reading && !live && 'opacity-[0.92]',
       )}
     >
-      {armed && <DragHandle />}
+      {armed && state.movable && <DragHandle />}
       {live ? (
         <LiveContent live={live} state={state} armed={armed} controls={menuButton} />
       ) : reading ? (

@@ -1,7 +1,7 @@
 import { app, Notification, powerMonitor, systemPreferences } from 'electron';
 import type { PermissionState, SystemStatus, WorkerHealth } from '@shared/domain/system';
 import type { AppPaths } from '../app/paths';
-import { overlaySupport, systemAudioSupport } from '../app/platform';
+import { linuxDisplay, overlaySupport, systemAudioSupport } from '../app/platform';
 import type { OverlayController } from './overlay-controller';
 import type { ShortcutService } from './shortcuts';
 import type { TextInserter } from './text-insertion';
@@ -37,6 +37,7 @@ export function collectSystemStatus(deps: {
     insertion: deps.inserter.support(),
     shortcuts: deps.shortcuts.current(),
     overlay: overlaySupport(),
+    linuxDisplay: linuxDisplay(),
     trayVisible: deps.tray.visible(),
     notificationsSupported: Notification.isSupported(),
     dataDir: deps.paths.data,

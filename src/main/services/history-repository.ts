@@ -168,14 +168,25 @@ export class HistoryRepository {
     if (!this.db) {
       const items = this.jsonItems.filter((item) => matchesKind(item, kind));
       return {
-        rows: items.filter((item) => item.createdAt >= since).map(({ text, durationMs, createdAt }) => ({ text, durationMs, createdAt })),
+        rows: items
+          .filter((item) => item.createdAt >= since)
+          .map(({ text, durationMs, createdAt, modelId, inferenceMs }) => ({ text, durationMs, createdAt, modelId, inferenceMs })),
         times: items.map((item) => item.createdAt),
       };
     }
     const statements = this.activityStatements(kind);
     const rows = statements.rows.all(since).flatMap((row) => {
-      const { text, duration_ms: durationMs, created_at: createdAt } = row as Record<string, unknown>;
-      return typeof text === 'string' && typeof durationMs === 'number' && typeof createdAt === 'number' ? [{ text, durationMs, createdAt }] : [];
+      const { text, duration_ms: durationMs, created_at: createdAt, model_id: modelId, inference_ms: inferenceMs } = row as Record<string, unknown>;
+      if (typeof text !== 'string' || typeof durationMs !== 'number' || typeof createdAt !== 'number') return [];
+      return [
+        {
+          text,
+          durationMs,
+          createdAt,
+          modelId: typeof modelId === 'string' ? modelId : undefined,
+          inferenceMs: typeof inferenceMs === 'number' ? inferenceMs : undefined,
+        },
+      ];
     });
     const times = statements.times.all().flatMap((row) => {
       const createdAt = (row as Record<string, unknown>).created_at;
@@ -327,7 +338,7 @@ export class HistoryRepository {
     if (cached) return cached;
     if (!this.db) throw new Error('History database is not available');
     const statements = {
-      rows: this.db.prepare(`SELECT t.text, t.duration_ms, t.created_at FROM transcripts t WHERE ${KIND_SQL[kind]} AND t.created_at >= ?`),
+      rows: this.db.prepare(`SELECT t.text, t.duration_ms, t.created_at, t.model_id, t.inference_ms FROM transcripts t WHERE ${KIND_SQL[kind]} AND t.created_at >= ?`),
       times: this.db.prepare(`SELECT t.created_at FROM transcripts t WHERE ${KIND_SQL[kind]}`),
     };
     this.activities.set(kind, statements);

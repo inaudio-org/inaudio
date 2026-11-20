@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { BrowserWindow } from 'electron';
+import { screen, type BrowserWindow } from 'electron';
 import {
   COMPANIONS,
   type CompanionEvent,
@@ -9,7 +9,8 @@ import {
 } from '@shared/domain/companion';
 import type { Settings } from '@shared/domain/settings';
 import { EVENTS } from '@shared/ipc/channels';
-import { createCompanionWindow, placeCompanion } from '../windows/companion-window';
+import { companionIsCustom, createCompanionWindow, placeCompanion } from '../windows/companion-window';
+import { overlaySupport } from '../app/platform';
 import { CompanionGazeTracker } from './companion-gaze';
 import { FocusProbe } from './focus-probe';
 import type { SettingsStore } from './settings-store';
@@ -35,6 +36,8 @@ export class CompanionService extends EventEmitter<{
   private sleepingTimer: NodeJS.Timeout | null = null;
   private focusTimer: NodeJS.Timeout | null = null;
   private hoverTimer: NodeJS.Timeout | null = null;
+  /** The companion is being dragged: where the window and the pointer started. */
+  private drag: { bounds: Electron.Rectangle; x: number; y: number } | null = null;
   private readonly gaze = new CompanionGazeTracker(new FocusProbe(), () => this.window);
 
   constructor(private readonly settings: SettingsStore) {
@@ -53,6 +56,7 @@ export class CompanionService extends EventEmitter<{
       event: this.lastEvent,
       revision: this.revision,
       dictating: this.dictating || this.reading || this.live,
+      movable: overlaySupport().place,
     };
   }
 
@@ -125,6 +129,43 @@ export class CompanionService extends EventEmitter<{
     }
   }
 
+  /**
+   * The companion is dragged by the pointer. The window follows it and stays on a screen; on
+   * release its centre is saved as shares of that screen's work area, never as pixels.
+   */
+  dragTo(phase: 'start' | 'move' | 'end', x: number, y: number): void {
+    const win = this.window;
+    if (!win || win.isDestroyed()) return;
+    if (phase === 'start') {
+      // Keep taking the pointer for the whole drag, even with click-through on.
+      if (this.hoverTimer) clearTimeout(this.hoverTimer);
+      this.hoverTimer = null;
+      win.setIgnoreMouseEvents(false);
+      this.drag = { bounds: win.getBounds(), x, y };
+      return;
+    }
+    const drag = this.drag;
+    if (!drag) return;
+    const area = screen.getDisplayNearestPoint({ x, y }).workArea;
+    const { width, height } = drag.bounds;
+    const next = {
+      x: clamp(drag.bounds.x + x - drag.x, area.x, area.x + Math.max(0, area.width - width)),
+      y: clamp(drag.bounds.y + y - drag.y, area.y, area.y + Math.max(0, area.height - height)),
+      width,
+      height,
+    };
+    win.setBounds(next, false);
+    if (phase !== 'end') return;
+    this.drag = null;
+    this.settings.update({
+      companion: {
+        customX: clamp((next.x + width / 2 - area.x) / area.width, 0, 1),
+        customY: clamp((next.y + height / 2 - area.y) / area.height, 0, 1),
+      },
+    });
+    this.restoreClickThrough();
+  }
+
   click(): CompanionSnapshot {
     this.react('companion.clicked', 'attention');
     this.restoreClickThrough();
@@ -184,7 +225,8 @@ export class CompanionService extends EventEmitter<{
     const win = this.window;
     if (win && !win.isDestroyed()) {
       const companion = settings.companion;
-      placeCompanion(win, companion.position, companion.scale, companion, this.gaze.focusTarget());
+      // While the user drags it, the pointer decides where it is.
+      if (!this.drag) placeCompanion(win, companion.position, companion.scale, companion, this.gaze.focusTarget());
       win.setIgnoreMouseEvents(companion.clickThrough, { forward: true });
       if (companion.visible) win.showInactive();
       else win.hide();
@@ -200,7 +242,7 @@ export class CompanionService extends EventEmitter<{
     const eyes = shown && companion.eyesFollow && companion.motion === 'full';
     this.gaze.configure({
       eyes,
-      focus: shown && (eyes || companion.position === 'focus-area'),
+      focus: shown && (eyes || (companion.position === 'focus-area' && !companionIsCustom(companion))),
       asleep: this.state === 'sleeping',
       dictating: this.dictating,
     });
@@ -209,9 +251,10 @@ export class CompanionService extends EventEmitter<{
   private syncFocusTracking(settings = this.settings.get()): void {
     if (this.focusTimer) clearInterval(this.focusTimer);
     this.focusTimer = null;
-    if (settings.companion.position !== 'focus-area' || !settings.companion.visible) return;
+    const { companion } = settings;
+    if (companion.position !== 'focus-area' || companionIsCustom(companion) || !companion.visible) return;
     this.focusTimer = setInterval(() => {
-      if (this.window && !this.window.isDestroyed()) {
+      if (this.window && !this.window.isDestroyed() && !this.drag) {
         const companion = this.settings.get().companion;
         placeCompanion(this.window, 'focus-area', companion.scale, companion, this.gaze.focusTarget());
       }
@@ -245,4 +288,8 @@ export class CompanionService extends EventEmitter<{
       win.setIgnoreMouseEvents(this.settings.get().companion.clickThrough, { forward: true });
     }
   }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, max));
 }

@@ -8,8 +8,8 @@ export const ACTIVITY_KINDS = ['dictation', 'live'] as const;
 export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
 export const ACTIVITY_RANGES = [7, 30] as const;
 export type ActivityRange = (typeof ACTIVITY_RANGES)[number];
-/** Weeks drawn in the heatmap, Monday to Sunday columns ending with the current week. */
-export const ACTIVITY_WEEKS = 12;
+/** Weeks drawn in the heatmap, Monday to Sunday columns ending with the current week: half a year fills the drawer. */
+export const ACTIVITY_WEEKS = 26;
 
 const DAY_MS = 86_400_000;
 /** Below this much audio a words-a-minute figure means nothing. */
@@ -24,6 +24,25 @@ export interface ActivityRow {
   text: string;
   durationMs: number;
   createdAt: number;
+  /** The recognition model that made it. Older callers may leave both out. */
+  modelId?: string;
+  /** Milliseconds the model spent on it on this computer. */
+  inferenceMs?: number;
+}
+
+/** One recognition model's share of the range. */
+export interface ActivityModel {
+  id: string;
+  words: number;
+  takes: number;
+  /** Milliseconds of audio. */
+  ms: number;
+  /** Milliseconds spent transcribing, for the speed figure. */
+  inferenceMs: number;
+  /** Words per day across the range, oldest first, today last. */
+  dailyWords: number[];
+  /** Milliseconds of audio per day across the range. */
+  dailyMs: number[];
 }
 
 export interface ActivityTotals {
@@ -41,6 +60,8 @@ export interface Activity extends ActivityTotals {
   previous: ActivityTotals;
   /** Words per day across the range, oldest first, today last. */
   daily: number[];
+  /** The models used in the range, most words first. */
+  models: ActivityModel[];
   /** Words per day for ACTIVITY_WEEKS full weeks from `heatmapStart`; days after today are 0. */
   heatmap: number[];
   /** Local midnight of the first heatmap day, a Monday. */
@@ -116,6 +137,7 @@ export function activityOf(rows: readonly ActivityRow[], times: readonly number[
   const heatmap = Array<number>(ACTIVITY_WEEKS * 7).fill(0);
   const current = { words: 0, takes: 0, ms: 0 };
   const previous = { words: 0, takes: 0, ms: 0 };
+  const models = new Map<string, ActivityModel>();
 
   for (const row of rows) {
     if (startOfDay(row.createdAt) > today) continue;
@@ -130,8 +152,21 @@ export function activityOf(rows: readonly ActivityRow[], times: readonly number[
     if (bucket === current) {
       const day = dayIndex(rangeStart, row.createdAt);
       daily[day] = (daily[day] ?? 0) + words;
+      const id = row.modelId || 'unknown';
+      let model = models.get(id);
+      if (!model) {
+        model = { id, words: 0, takes: 0, ms: 0, inferenceMs: 0, dailyWords: Array<number>(days).fill(0), dailyMs: Array<number>(days).fill(0) };
+        models.set(id, model);
+      }
+      model.words += words;
+      model.takes += 1;
+      model.ms += row.durationMs;
+      model.inferenceMs += row.inferenceMs ?? 0;
+      model.dailyWords[day] = (model.dailyWords[day] ?? 0) + words;
+      model.dailyMs[day] = (model.dailyMs[day] ?? 0) + row.durationMs;
     }
   }
 
-  return { ...totals(current), days, previous: totals(previous), daily, heatmap, heatmapStart: mapStart, today, streak: streaks(times, today) };
+  const byUse = [...models.values()].sort((a, b) => b.words - a.words || b.ms - a.ms || a.id.localeCompare(b.id));
+  return { ...totals(current), days, previous: totals(previous), daily, models: byUse, heatmap, heatmapStart: mapStart, today, streak: streaks(times, today) };
 }

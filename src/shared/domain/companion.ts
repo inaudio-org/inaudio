@@ -84,6 +84,8 @@ export interface CompanionSnapshot {
   revision: number;
   /** A recording or its transcription is in flight; spoken lines wait until it ends. */
   dictating: boolean;
+  /** The app can move its own windows here, so the companion can be dragged (not on native Wayland). */
+  movable: boolean;
 }
 
 export function companionBubbleText(state: CompanionState, focusArea = false): string {
@@ -121,6 +123,12 @@ export const companionSettingsSchema = z.object({
   hue: z.number().int().min(0).max(359),
   idleMoods: z.boolean(),
   backdrop: z.enum(['none', 'circle', 'squircle']),
+  /**
+   * Where the companion was dropped after a drag, as shares of that screen's work area (the
+   * centre of the window). Both null means it follows `position`; picking a position clears them.
+   */
+  customX: z.number().min(0).max(1).nullable(),
+  customY: z.number().min(0).max(1).nullable(),
   /** Which application events the companion reacts to. */
   reactions: reactionsSchema,
 });
@@ -156,6 +164,8 @@ export const DEFAULT_COMPANION_SETTINGS: CompanionSettings = {
   hue: 215,
   idleMoods: true,
   backdrop: 'none',
+  customX: null,
+  customY: null,
   reactions: DEFAULT_COMPANION_REACTIONS,
 };
 
